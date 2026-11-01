@@ -1,7 +1,9 @@
 //! The on-disk state of the watcher, under the cache dir:
 //!   watch/<run_id>        phase word: waiting | running
 //!   watch/<run_id>.meta   workflow \t title (for the result ping)
+//!   watch/<run_id>.ignored  the owner clicked Ignore: no more approval banners for it
 //!   shown/<banner>        epoch of the last banner \n its notification id
+//!                         (`run-<run_id>` for a run's approval banner)
 //! Writes are atomic (tmp + rename).
 
 use std::fs;
@@ -69,6 +71,17 @@ impl State {
         let dir = self.watch_dir();
         let _ = fs::remove_file(dir.join(id.to_string()));
         let _ = fs::remove_file(dir.join(format!("{id}.meta")));
+        let _ = fs::remove_file(dir.join(format!("{id}.ignored")));
+        let _ = fs::remove_file(self.shown_dir().join(run_banner(id)));
+    }
+
+    /// Stop the approval banners of one run (the Ignore button).
+    pub fn ignore(&self, id: u64) {
+        let _ = atomic_write(&self.watch_dir().join(format!("{id}.ignored")), String::new());
+    }
+
+    pub fn ignored(&self, id: u64) -> bool {
+        self.watch_dir().join(format!("{id}.ignored")).exists()
     }
 
     /// The (epoch, notification id) of a banner, when we have shown one.
@@ -94,6 +107,11 @@ impl State {
             None => false,
         }
     }
+}
+
+/// The stamp name of a run's approval banner.
+pub fn run_banner(id: u64) -> String {
+    format!("run-{id}")
 }
 
 pub fn now() -> u64 {

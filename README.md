@@ -1,9 +1,8 @@
 # iris
 
 iris shows the GitHub Actions runs that wait for your deployment approval on
-your desktop. You approve or reject them in the terminal TUI. One API call
-reviews every environment of a run. The banner never approves. You approve in
-the TUI or on the website.
+your desktop. You approve or deny them from the banner, in the terminal TUI,
+or on the website. One API call reviews every environment of a run.
 
 `homelab-iac` gates each apply with a GitHub environment and a required
 reviewer. One push can leave up to four runs waiting. iris makes those waits
@@ -36,7 +35,7 @@ iris stores no token. It uses your `gh` login.
 | `iris list` | Print the runs that wait for approval. |
 | `iris daemon` | Poll the repository and show banners. |
 | `iris daemon --once` | Run one poll and stop. |
-| `iris notify-test` | Show one test banner. |
+| `iris notify-test` | Show a test banner and print the button you click. |
 
 ### The TUI section
 
@@ -66,12 +65,23 @@ iris stores no token. It uses your `gh` login.
 
 ### The banner
 
-One banner shows each waiting run and its environments. The banner gives
-information only. Its button opens GitHub.
+Each waiting run gets its own banner with the commit title and the
+environments. The banner stays until you click it or close it.
 
-A banner that you do not answer shows again after the re-ping interval. The
-new banner replaces the old one. When a run that iris showed completes, iris
-shows a second banner with the result.
+| Click | Action |
+| --- | --- |
+| the banner | Open the run on GitHub. |
+| `Approve` | Approve every environment you can review. |
+| `Deny` | Reject them. |
+| `Ignore` | Close the banner. iris shows no more banners for this run. |
+
+A short banner confirms an approve or a deny, or shows the error. A banner
+that you close with its × shows again after the re-ping interval. When a run
+that iris showed completes, iris shows a second banner with the result.
+
+iris opens GitHub through the desktop portal (`org.freedesktop.portal.OpenURI`),
+so the browser starts even when the daemon runs without a display in its
+environment. `xdg-open` is the fallback.
 
 ## Configure
 
@@ -81,9 +91,9 @@ You set each value with an environment variable. Each variable has a default.
 | --- | --- | --- |
 | `IRIS_REPO` | `cnbrown04/homelab-iac` | the repository to watch |
 | `IRIS_POLL_SECS` | `60` | seconds between the polls of the daemon |
-| `IRIS_REPING_SECS` | `600` | seconds before an ignored banner shows again |
+| `IRIS_REPING_SECS` | `600` | seconds before a closed banner shows again |
 | `IRIS_AUTO_SECS` | `30` | seconds between the refreshes of the TUI |
-| `IRIS_NOTIFY_MS` | `15000` | milliseconds one banner stays |
+| `IRIS_NOTIFY_MS` | `15000` | milliseconds the result and confirm banners stay |
 | `IRIS_TITLE_MAX` | `70` | the max characters of a commit title |
 | `IRIS_CACHE` | `~/.cache/iris` | the state directory |
 
@@ -144,4 +154,4 @@ rm -r ~/.cache/iris
 - iris sends the banners over D-Bus. Use any standard notification server.
 - An environment that blocks self-approval shows as "cannot approve". iris
   does not send those environments to the review.
-- The current state: tested with Hyprland and quickshell on one desktop.
+- The current state: tested with Hyprland and Hokum on one desktop.
